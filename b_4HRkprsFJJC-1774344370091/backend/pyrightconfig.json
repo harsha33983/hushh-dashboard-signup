@@ -1,0 +1,9 @@
+{
+  "projectRoot": ".",
+  "include": ["app"],
+  "executionEnvironments": [
+    {
+      "root": "app"
+    }
+  ]
+}

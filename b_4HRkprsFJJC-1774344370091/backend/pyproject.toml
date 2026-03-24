@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "drop-off-iq-backend"
+version = "0.1.0"
+description = "FastAPI backend for Drop-off Intelligence Platform"
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "sqlmodel",
+    "asyncpg",
+    "pydantic-settings",
+    "loguru",
+    "slowapi",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
+[tool.pyright]
+include = ["app"]
+executionEnvironments = [
+  { "root": "." }
+]
