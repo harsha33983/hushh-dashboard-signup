@@ -37,7 +37,7 @@ export async function GET() {
 
     const frictionData = rows.map((row) => {
       let severity = "Normal";
-      if (row.errors > 10) severity = "Critical"; // Thresholds for MVP data
+      if (row.errors > 10) severity = "Critical";
       else if (row.errors > 5) severity = "High";
 
       return {
