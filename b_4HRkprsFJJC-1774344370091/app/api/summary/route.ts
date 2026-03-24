@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server";
 import { getPool } from "@/lib/db";
+import { backendFetch } from "@/lib/backend-client";
 
 export async function GET() {
+  // Try FastAPI first
+  try {
+    const data = await backendFetch("/api/v1/summary");
+    return NextResponse.json(data);
+  } catch {
+    // FastAPI unavailable — fall back to direct Supabase queries
+  }
+
   const db = getPool();
 
   const workspaceId = "default"; // For MVP

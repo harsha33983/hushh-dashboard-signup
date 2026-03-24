@@ -19,10 +19,12 @@ export type RealtimeMessage =
 type Status = "connecting" | "connected" | "disconnected" | "error";
 
 const WS_URL =
-  process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/ws";
+  typeof window !== "undefined"
+    ? (process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/ws")
+    : "";
 
 const RECONNECT_DELAY_MS = 3000;
-const MAX_EVENTS = 50; // keep last N events in memory
+const MAX_EVENTS = 50;
 
 export function useRealtime(onEvent?: (event: RealtimeEvent) => void) {
   const [status, setStatus] = useState<Status>("disconnected");
@@ -32,6 +34,9 @@ export function useRealtime(onEvent?: (event: RealtimeEvent) => void) {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
+  // Keep onEvent in a ref so connect() never needs it as a dependency
+  const onEventRef = useRef(onEvent);
+  useEffect(() => { onEventRef.current = onEvent; }, [onEvent]);
 
   const connect = useCallback(() => {
     if (!mountedRef.current) return;
@@ -51,14 +56,11 @@ export function useRealtime(onEvent?: (event: RealtimeEvent) => void) {
       if (!mountedRef.current) return;
       try {
         const msg: RealtimeMessage = JSON.parse(e.data);
-
         if (msg.type === "connected") {
           setActiveClients(msg.active_clients);
         } else if (msg.type === "event") {
-          setRecentEvents((prev) =>
-            [msg.data, ...prev].slice(0, MAX_EVENTS)
-          );
-          onEvent?.(msg.data);
+          setRecentEvents((prev) => [msg.data, ...prev].slice(0, MAX_EVENTS));
+          onEventRef.current?.(msg.data);
         }
       } catch {
         // Ignore malformed messages
@@ -74,10 +76,9 @@ export function useRealtime(onEvent?: (event: RealtimeEvent) => void) {
       if (!mountedRef.current) return;
       setStatus("disconnected");
       wsRef.current = null;
-      // Auto-reconnect
       reconnectTimer.current = setTimeout(connect, RECONNECT_DELAY_MS);
     };
-  }, [onEvent]);
+  }, []); // stable — no external deps
 
   useEffect(() => {
     mountedRef.current = true;

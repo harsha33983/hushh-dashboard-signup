@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPool } from "@/lib/db";
+import { backendFetch } from "@/lib/backend-client";
 
 const stepDefs = [
   { stepId: "step-1", name: "Email & Password",    avgTime: "1m 02s" },
@@ -9,6 +10,33 @@ const stepDefs = [
 ];
 
 export async function GET() {
+  // Try FastAPI first — richer analytics
+  try {
+    const data = await backendFetch<{ steps: any[]; total_sessions: number }>("/api/v1/funnel");
+    // Normalize FastAPI shape to match what the frontend expects
+    const steps = data.steps ?? [];
+    const baseVisitors = steps[0]?.visitor_count || 1;
+    const result = steps.map((step: any, index: number) => {
+      const prev = steps[index - 1];
+      const next = steps[index + 1];
+      const dropOffRate = prev && prev.visitor_count > 0
+        ? Math.max(0, Math.round(((prev.visitor_count - step.visitor_count) / prev.visitor_count) * 100))
+        : 0;
+      return {
+        stepId: step.step,
+        name: step.name,
+        visitors: step.visitor_count,
+        conversions: next?.visitor_count ?? step.visitor_count,
+        dropOffRate,
+        conversionFromTop: Math.round((step.visitor_count / baseVisitors) * 100),
+        avgTime: stepDefs.find((s) => s.stepId === step.step)?.avgTime ?? "—",
+      };
+    });
+    return NextResponse.json(result);
+  } catch {
+    // FastAPI unavailable — fall back to direct DB queries
+  }
+
   try {
     const db = getPool();
 
