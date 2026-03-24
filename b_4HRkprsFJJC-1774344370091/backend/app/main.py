@@ -27,7 +27,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 
-from .api.routes import events, funnel, insights, summary
+from .api.routes import events, funnel, insights, summary, websocket as ws_routes
 from .core.config import get_settings
 from .core.database import close_db, init_db
 
@@ -140,6 +140,7 @@ app.include_router(events.router,  prefix="/api/v1")
 app.include_router(funnel.router,  prefix="/api/v1")
 app.include_router(insights.router, prefix="/api/v1")
 app.include_router(summary.router,  prefix="/api/v1")
+app.include_router(ws_routes.router)  # WebSocket — no /api/v1 prefix
 
 
 # ── Health check ───────────────────────────────────────────────────────────────

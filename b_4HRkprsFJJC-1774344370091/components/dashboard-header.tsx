@@ -14,6 +14,7 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun } from "lucide-react";
+import { RealtimeIndicator } from "@/components/realtime-indicator";
 
 export function DashboardHeader() {
   const pathname = usePathname();
@@ -44,6 +45,7 @@ export function DashboardHeader() {
         </Breadcrumb>
       </div>
       <div className="ml-auto flex items-center gap-3">
+        <RealtimeIndicator />
         <div className="text-xs text-muted-foreground hidden sm:block">
           Last updated: Just now
         </div>

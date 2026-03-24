@@ -10,6 +10,7 @@ from ..deps import APIKeyDep, DBSession
 from ...schemas.event import EventCreate, EventRead
 from ...schemas.response import OkResponse, DataResponse
 from ...services import event_service
+from ...core.ws_manager import manager as ws_manager
 
 router = APIRouter(prefix="/events", tags=["Events"])
 
@@ -32,6 +33,22 @@ async def create_event(
     x_workspace_id: str = Header(..., alias="X-Workspace-Id"),
 ) -> OkResponse:
     await event_service.ingest_event(db, payload, x_workspace_id)
+
+    # Broadcast to all connected WebSocket clients (non-blocking)
+    background_tasks.add_task(
+        ws_manager.broadcast,
+        {
+            "type": "event",
+            "data": {
+                "event_type": payload.event_type,
+                "step": payload.step,
+                "field": payload.field,
+                "session_id": payload.session_id,
+                "workspace_id": x_workspace_id,
+                "timestamp": payload.timestamp.isoformat() if payload.timestamp else None,
+            },
+        },
+    )
 
     # Optional: background aggregation (non-blocking)
     background_tasks.add_task(
